@@ -4,7 +4,11 @@ import com.varun.finance.dto.PaymentRequest;
 import com.varun.finance.dto.TransactionRequest;
 import com.varun.finance.model.Transaction;
 import com.varun.finance.repository.TransactionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -16,12 +20,20 @@ import java.util.UUID;
 @Service
 public class TransactionService {
 
+    private static final Logger log = LoggerFactory.getLogger(TransactionService.class);
+
     private final TransactionRepository repository;
     private final KafkaTemplate<String, Transaction> kafkaTemplate;
+    private final boolean kafkaEnabled;
 
-    public TransactionService(TransactionRepository repository, KafkaTemplate<String, Transaction> kafkaTemplate) {
+    public TransactionService(
+            TransactionRepository repository,
+            @Nullable KafkaTemplate<String, Transaction> kafkaTemplate,
+            @Value("${app.kafka.enabled:false}") boolean kafkaEnabled
+    ) {
         this.repository = repository;
         this.kafkaTemplate = kafkaTemplate;
+        this.kafkaEnabled = kafkaEnabled;
     }
 
     public void process(TransactionRequest request) {
@@ -44,7 +56,7 @@ public class TransactionService {
         txn.setStatus("VALIDATED");
 
         repository.save(txn);
-        kafkaTemplate.send("validated-transactions", txn);
+        publishValidatedTransaction(txn);
     }
 
     public Transaction processPayment(PaymentRequest request) {
@@ -77,7 +89,7 @@ public class TransactionService {
         txn.setStatus("TOKENIZED");
 
         Transaction saved = repository.save(txn);
-        kafkaTemplate.send("validated-transactions", saved);
+        publishValidatedTransaction(saved);
         return saved;
     }
 
@@ -87,5 +99,17 @@ public class TransactionService {
             return generateTransactionId();
         }
         return candidate;
+    }
+
+    private void publishValidatedTransaction(Transaction transaction) {
+        if (!kafkaEnabled || kafkaTemplate == null) {
+            return;
+        }
+
+        try {
+            kafkaTemplate.send("validated-transactions", transaction);
+        } catch (Exception ex) {
+            log.warn("Kafka publish failed for transaction {}", transaction.getTransactionId(), ex);
+        }
     }
 }

@@ -1,3 +1,6 @@
+server:
+  port: ${PORT:8080}
+
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:finance}
@@ -13,3 +16,7 @@ spring:
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+app:
+  kafka:
+    enabled: ${APP_KAFKA_ENABLED:false}

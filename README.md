@@ -24,3 +24,16 @@ mvn spring-boot:run
 - Submit card-holder details and amount
 - Frontend generates a payment token and sends it to `POST /api/transactions/payments`
 - Backend stores tokenized payment metadata in PostgreSQL (`transactions` table)
+
+## Deploy Online (Render)
+1. Push this repo to GitHub.
+2. In Render, create a **PostgreSQL** service.
+3. Create a **Web Service** from this repo with **Dockerfile**.
+4. Set environment variables in Render:
+   - `DB_HOST` = your Render Postgres host
+   - `DB_PORT` = `5432`
+   - `DB_NAME` = your database name
+   - `DB_USER` = your database user
+   - `DB_PASSWORD` = your database password
+   - `APP_KAFKA_ENABLED` = `false` (or `true` only if you provision Kafka)
+5. Deploy, then open: `https://<your-render-domain>/payment.html`
