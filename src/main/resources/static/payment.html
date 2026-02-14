@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Gateway</title>
+    <style>
+        :root {
+            --bg-start: #f5f7fa;
+            --bg-end: #d7e1ec;
+            --panel: #ffffff;
+            --ink: #152238;
+            --muted: #4b5a73;
+            --primary: #0f62fe;
+            --success: #1f7a1f;
+            --danger: #b42318;
+            --border: #d0d7e2;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(140deg, var(--bg-start), var(--bg-end));
+            color: var(--ink);
+            padding: 20px;
+        }
+
+        .card {
+            width: min(560px, 100%);
+            background: var(--panel);
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 20px 40px rgba(21, 34, 56, 0.12);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+        }
+
+        p {
+            margin: 0 0 20px;
+            color: var(--muted);
+        }
+
+        form {
+            display: grid;
+            gap: 14px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 14px;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: var(--muted);
+        }
+
+        input,
+        select {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 12px;
+            font-size: 15px;
+        }
+
+        input:focus,
+        select:focus {
+            outline: 2px solid rgba(15, 98, 254, 0.25);
+            border-color: var(--primary);
+        }
+
+        button {
+            margin-top: 6px;
+            border: 0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            background: var(--primary);
+            cursor: pointer;
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .result {
+            margin-top: 14px;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .success {
+            color: var(--success);
+        }
+
+        .error {
+            color: var(--danger);
+        }
+
+        @media (max-width: 640px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<section class="card">
+    <h1>Payment Gateway</h1>
+    <p>Enter card-holder details, tokenize the request, and submit payment.</p>
+
+    <form id="payment-form">
+        <div>
+            <label for="cardHolderName">Card Holder Name</label>
+            <input id="cardHolderName" name="cardHolderName" autocomplete="cc-name" required />
+        </div>
+
+        <div>
+            <label for="cardNumber">Card Number</label>
+            <input id="cardNumber" name="cardNumber" inputmode="numeric" autocomplete="cc-number" minlength="13" maxlength="19" required />
+        </div>
+
+        <div class="grid">
+            <div>
+                <label for="expiryMonth">Expiry Month</label>
+                <input id="expiryMonth" name="expiryMonth" type="number" min="1" max="12" required />
+            </div>
+            <div>
+                <label for="expiryYear">Expiry Year</label>
+                <input id="expiryYear" name="expiryYear" type="number" min="2024" max="2100" required />
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <label for="amount">Amount</label>
+                <input id="amount" name="amount" type="number" min="0.01" step="0.01" required />
+            </div>
+            <div>
+                <label for="currency">Currency</label>
+                <select id="currency" name="currency" required>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="INR">INR</option>
+                    <option value="GBP">GBP</option>
+                </select>
+            </div>
+        </div>
+
+        <button id="submit-btn" type="submit">Submit Payment</button>
+    </form>
+
+    <div id="result" class="result"></div>
+</section>
+
+<script>
+    const form = document.getElementById("payment-form");
+    const submitButton = document.getElementById("submit-btn");
+    const resultEl = document.getElementById("result");
+
+    async function generatePaymentToken(payload) {
+        const source = JSON.stringify({
+            cardHolderName: payload.cardHolderName,
+            cardNumber: payload.cardNumber,
+            expiryMonth: payload.expiryMonth,
+            expiryYear: payload.expiryYear,
+            amount: payload.amount,
+            currency: payload.currency,
+            nonce: crypto.randomUUID(),
+            createdAt: Date.now()
+        });
+
+        const data = new TextEncoder().encode(source);
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hash = Array.from(new Uint8Array(hashBuffer))
+            .map((value) => value.toString(16).padStart(2, "0"))
+            .join("");
+        return "tok_" + hash.slice(0, 28);
+    }
+
+    function showMessage(text, type) {
+        resultEl.textContent = text;
+        resultEl.className = "result " + type;
+    }
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        submitButton.disabled = true;
+        showMessage("Generating token and processing payment...", "");
+
+        const cardNumberRaw = form.cardNumber.value.replace(/\s+/g, "");
+        const payload = {
+            cardHolderName: form.cardHolderName.value.trim(),
+            cardNumber: cardNumberRaw,
+            expiryMonth: Number(form.expiryMonth.value),
+            expiryYear: Number(form.expiryYear.value),
+            amount: Number(form.amount.value),
+            currency: form.currency.value.toUpperCase()
+        };
+
+        try {
+            payload.paymentToken = await generatePaymentToken(payload);
+
+            const response = await fetch("/api/transactions/payments", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const contentType = response.headers.get("content-type") || "";
+            const body = contentType.includes("application/json")
+                ? await response.json()
+                : { message: await response.text() };
+
+            if (!response.ok) {
+                throw new Error(body.message || "Payment request failed");
+            }
+
+            showMessage(
+                "Payment stored successfully.\nTransaction ID: " + body.transactionId + "\nToken: " + body.paymentToken,
+                "success"
+            );
+            form.reset();
+        } catch (error) {
+            showMessage(error.message, "error");
+        } finally {
+            submitButton.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

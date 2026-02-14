@@ -1,12 +1,15 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/finance
-    username: admin
-    password: admin
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:finance}
+    username: ${DB_USER:admin}
+    password: ${DB_PASSWORD:admin}
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+  sql:
+    init:
+      mode: always
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
