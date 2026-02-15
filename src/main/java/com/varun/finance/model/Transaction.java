@@ -1,57 +1,29 @@
 package com.varun.finance.model;
 
-import jakarta.persistence.*;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbBean;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbPartitionKey;
+import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbSecondaryPartitionKey;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "transactions")
+@DynamoDbBean
 public class Transaction {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "transaction_id", unique = true)
     private String transactionId;
-
-    @Column(name = "account_number")
     private String accountNumber;
-
-    @Column(name = "payment_token", unique = true, length = 120)
     private String paymentToken;
-
-    @Column(name = "card_holder_name", length = 120)
     private String cardHolderName;
-
-    @Column(name = "card_last4", length = 4)
     private String cardLast4;
-
     private BigDecimal amount;
-
-    @Column(length = 3)
     private String currency;
-
-    @Column(name = "transaction_time")
-    private LocalDateTime transactionTime;
-
-    @Column(name = "payment_gateway", length = 60)
+    private String transactionTime;
     private String paymentGateway;
-
     private String status;
 
     public Transaction() {
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
+    @DynamoDbPartitionKey
     public String getTransactionId() {
         return transactionId;
     }
@@ -68,6 +40,7 @@ public class Transaction {
         this.accountNumber = accountNumber;
     }
 
+    @DynamoDbSecondaryPartitionKey(indexNames = "payment_token_index")
     public String getPaymentToken() {
         return paymentToken;
     }
@@ -108,11 +81,11 @@ public class Transaction {
         this.currency = currency;
     }
 
-    public LocalDateTime getTransactionTime() {
+    public String getTransactionTime() {
         return transactionTime;
     }
 
-    public void setTransactionTime(LocalDateTime transactionTime) {
+    public void setTransactionTime(String transactionTime) {
         this.transactionTime = transactionTime;
     }
 

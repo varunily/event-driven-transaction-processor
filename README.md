@@ -1,13 +1,12 @@
 # Financial Transaction Processor
 
-Spring Boot microservice for processing financial transactions with validation, Kafka integration, PostgreSQL persistence, and CI/CD automation.
+Spring Boot microservice for processing financial transactions with validation, optional Kafka integration, and DynamoDB persistence.
 
 ## Tech Stack
 - Java 17
 - Spring Boot
-- Spring Data JPA
+- DynamoDB (AWS SDK v2)
 - Kafka
-- PostgreSQL
 - Docker
 - GitHub Actions
 
@@ -15,25 +14,35 @@ Spring Boot microservice for processing financial transactions with validation, 
 mvn clean install
 mvn spring-boot:run
 
-## Local Infra (Docker)
-- PostgreSQL: run with `-p 5433:5432` (project defaults to DB port `5433`)
-- Kafka/Redpanda: run with `-p 9092:9092`
+## DynamoDB Setup
+Create a DynamoDB table (default name `transactions`) with:
+- Partition key: `transactionId` (String)
+- Global secondary index: `payment_token_index` with partition key `paymentToken` (String)
+
+Set environment variables:
+- `AWS_REGION` (example: `us-east-2`)
+- `DYNAMODB_TABLE` (example: `transactions`)
+- `APP_KAFKA_ENABLED` = `false` (or `true` only if you provision Kafka)
+
+If you want to use DynamoDB Local, set:
+- `DYNAMODB_ENDPOINT` (example: `http://localhost:8000`)
 
 ## Payment Page
 - Open `http://localhost:8080/payment.html`
 - Submit card-holder details and amount
 - Frontend generates a payment token and sends it to `POST /api/transactions/payments`
-- Backend stores tokenized payment metadata in PostgreSQL (`transactions` table)
+- Backend stores tokenized payment metadata in DynamoDB
 
-## Deploy Online (Render)
-1. Push this repo to GitHub.
-2. In Render, create a **PostgreSQL** service.
-3. Create a **Web Service** from this repo with **Dockerfile**.
-4. Set environment variables in Render:
-   - `DB_HOST` = your Render Postgres host
-   - `DB_PORT` = `5432`
-   - `DB_NAME` = your database name
-   - `DB_USER` = your database user
-   - `DB_PASSWORD` = your database password
-   - `APP_KAFKA_ENABLED` = `false` (or `true` only if you provision Kafka)
-5. Deploy, then open: `https://<your-render-domain>/payment.html`
+## Deploy Online (AWS App Runner)
+1. Build and push the Docker image to ECR.
+2. Create an App Runner service from the ECR image.
+3. Set environment variables:
+   - `AWS_REGION`
+   - `DYNAMODB_TABLE`
+   - `APP_KAFKA_ENABLED`
+4. Attach an IAM role to App Runner with:
+   - `dynamodb:PutItem`
+   - `dynamodb:GetItem`
+   - `dynamodb:Query`
+   - `dynamodb:DescribeTable`
+5. Deploy, then open: `https://<your-app-runner-domain>/payment.html`

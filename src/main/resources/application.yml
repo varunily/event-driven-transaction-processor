@@ -2,21 +2,14 @@ server:
   port: ${PORT:8080}
 
 spring:
-  datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:finance}
-    username: ${DB_USER:admin}
-    password: ${DB_PASSWORD:admin}
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-  sql:
-    init:
-      mode: always
-
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 app:
+  aws:
+    region: ${AWS_REGION:us-east-2}
+  dynamodb:
+    table: ${DYNAMODB_TABLE:transactions}
+    endpoint: ${DYNAMODB_ENDPOINT:}
   kafka:
     enabled: ${APP_KAFKA_ENABLED:false}

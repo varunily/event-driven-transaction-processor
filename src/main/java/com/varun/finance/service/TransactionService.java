@@ -12,7 +12,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.YearMonth;
 import java.util.Locale;
 import java.util.UUID;
@@ -50,7 +50,7 @@ public class TransactionService {
         txn.setTransactionId(request.getTransactionId());
         txn.setAccountNumber(request.getAccountNumber());
         txn.setAmount(request.getAmount());
-        txn.setTransactionTime(LocalDateTime.now());
+        txn.setTransactionTime(Instant.now().toString());
         txn.setCurrency("USD");
         txn.setPaymentGateway("LEGACY_API");
         txn.setStatus("VALIDATED");
@@ -84,7 +84,7 @@ public class TransactionService {
         txn.setCardLast4(cardLast4);
         txn.setAmount(request.getAmount());
         txn.setCurrency(request.getCurrency().toUpperCase(Locale.ROOT));
-        txn.setTransactionTime(LocalDateTime.now());
+        txn.setTransactionTime(Instant.now().toString());
         txn.setPaymentGateway("FRONTEND_GATEWAY");
         txn.setStatus("TOKENIZED");
 
