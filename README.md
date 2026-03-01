@@ -45,4 +45,4 @@ If you want to use DynamoDB Local, set:
    - `dynamodb:GetItem`
    - `dynamodb:Query`
    - `dynamodb:DescribeTable`
-5. Deploy, then open: `https://<your-app-runner-domain>/payment.html`
+5. Deploy, then open: https://je9mkuxq3w.us-east-2.awsapprunner.com (please click this link)
